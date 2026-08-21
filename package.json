@@ -1,9 +1,8 @@
 {
-  "name": "invoice-generator",
+  "name": "workflow",
   "version": "0.2.1",
   "private": true,
   "type": "module",
-  "homepage": "https://tuanpham-dev.github.io/react-invoice-generator/",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

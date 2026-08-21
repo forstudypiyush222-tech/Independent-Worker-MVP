@@ -1,31 +1,34 @@
-# React Invoice Generator
+# Workflow
 
-React Invoice Generator allows you quickly make invoices and save them as PDF. [https://tuanpham-dev.github.io/react-invoice-generator/](https://tuanpham-dev.github.io/react-invoice-generator/)
+A lightweight financial workflow for independent workers.
 
-![react-invoice-generator](https://raw.githubusercontent.com/tuanpham-dev/react-invoice-generator/master/screenshot.png)
+## What it does
 
-## Available Scripts
+Workflow helps independent workers manage the money side of their work without needing accounting expertise.
 
-In the project directory, you can run:
+### Core Features
 
-### `yarn start`
+- Create professional invoices
+- Track paid, pending and overdue payments
+- Chase unpaid invoices with ready-to-send reminders
+- View income and collection insights
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## MVP
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+This submission demonstrates a working MVP focused on:
 
-### `yarn lint` (`lint:write`)
+**Quote → Invoice → Payment Tracking → Payment Recovery → Income Overview**
 
-Launches Prettier, an opinionated code formatter.
+## Tech Stack
 
-https://prettier.io/
+- React
+- TypeScript
+- Vite
+- Local Storage
+- React PDF Renderer
 
-### `yarn build`
+## Running locally
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+```bash
+npm install
+npm run dev
