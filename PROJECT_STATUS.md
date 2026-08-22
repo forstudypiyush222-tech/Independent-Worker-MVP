@@ -161,12 +161,87 @@
   - Typecheck: `npx tsc --noEmit` $\rightarrow$ Exit code 0 (0 errors).
   - Production build: `npm run build` $\rightarrow$ Exit code 0 (Built in 4.71s, 0 errors).
   - Regression check: `git diff -- src/components/Dashboard.tsx src/components/InvoicePage.tsx src/utils/currency.ts src/styles/` $\rightarrow$ Clean (0 diff).
-- **Exact Next Phase**: Phase 3 — UI Component & Integration (connecting the frontend invoice creation workflow to the serverless function).
+- **Exact Next Phase**: Phase 3 — UI Component & Integration [COMPLETED].
+
+---
+
+### 5. Phase 3 — AI Invoice Generation: Controlled Frontend Integration
+- **Status**: COMPLETED & VERIFIED
+- **Core Architecture & Flow**:
+  ```
+  User clicks "✨ Generate with AI"
+      ↓
+  AIInvoiceModal (Accessible Dialog)
+      ↓
+  aiInvoiceService (POST /.netlify/functions/ai-invoice)
+      ↓
+  Serverless Engine (Gemini / Heuristic Fallback)
+      ↓
+  AIInvoiceModal Preview (Mandatory Review Notice)
+      ↓
+  User explicitly clicks "Apply to Invoice"
+      ↓
+  aiInvoiceMapper (Pure immutable mapper)
+      ↓
+  InvoicePage setInvoice(updated) / onChange(updated)
+      ↓
+  App.tsx State & LocalStorage Persistence
+      ↓
+  DownloadPDF React-PDF Vector Compilation
+  ```
+- **Strict Data-Mapping Implementation**:
+  - `clientName`: Persisted to `invoice.clientName`.
+  - `items`: Mapped to `invoice.productLines` (numeric quantities and rates converted to string format).
+  - `taxRate`: Formatted as `Sale Tax (${taxRate}%)` in `invoice.taxLabel` if $> 0$.
+  - `suggestedDueDate` / `dueInDays`: Formatted to human-readable `'MMM dd, yyyy'` in `invoice.invoiceDueDate`.
+  - `notes`: Extracted job notes mapped to `invoice.notes`.
+  - `clientEmail` & `clientPhone`: **PREVIEW ONLY** (marked as `"Preview only — not saved to the invoice"` in modal preview, strictly never appended to notes or persisted).
+  - Preserved fields (never modified): Currency, invoice ID (`invoiceTitle`), company name, company address, logo/width, static labels.
+- **State Ownership & Integrity**:
+  - Zero parallel invoice states created; `InvoicePage.tsx` passes mapped objects directly into the existing `setInvoice` / `onChange` pipeline.
+  - Calculations remain 100% authoritative in existing `InvoicePage` `useEffect`s (subtotal, sales tax, total balance).
+  - Persistence remains exclusively within `App.tsx`'s `localStorage` handler.
+  - Zero modifications to PDF compilation pipeline; AI modal and triggers are conditioned strictly on `!pdfMode`.
+- **Runtime Response Contract Fix**:
+  - **Root Cause**: In local development (`npm run dev`), the standalone Vite dev server was unconfigured for `/.netlify/functions/*` routes, returning 404 HTML fallback. Calling `response.json()` without pre-checking raw text/status caused `JSON.parse` syntax errors (`"Unable to parse server response"`).
+  - **Exact Fix**:
+    1. Added `netlifyFunctionsDevPlugin` in `vite.config.ts` to intercept `POST /.netlify/functions/ai-invoice` during local Vite dev and dispatch to `netlify/functions/ai-invoice.ts` handler with full Netlify runtime parity.
+    2. Updated `aiInvoiceService.ts` to read `response.text()` first, safely parse JSON, and handle all non-200 / non-JSON responses with clear diagnostic error messages.
+    3. Added `src/integration/ai-invoice/test/service.test.ts` (13 automated assertions) covering all success, error, 404 HTML fallback, and network failure states.
+  - **Verification Result**: Verified live with Vite dev server dispatching `"Repaired Rahul's AC for ₹2500 and replaced the filter for ₹600. Payment due in 7 days."` $\rightarrow$ Returns 200 OK with extracted line items and heuristic/gemini source. All 148 automated assertions pass.
+- **Files Created**:
+  - `src/integration/ai-invoice/aiInvoiceMapper.ts`: Pure immutable transformer mapping extraction to invoice structure.
+  - `src/integration/ai-invoice/test/mapper.test.ts`: 26 automated unit tests verifying all mapping rules, type conversions, and non-persistence of email/phone.
+  - `src/integration/ai-invoice/aiInvoiceService.ts`: Robust frontend client with bounds checking, native `fetch`, safe JSON parsing, and 10s timeout.
+  - `src/integration/ai-invoice/test/service.test.ts`: 13 automated service contract tests covering valid/invalid/HTML/error responses.
+  - `src/components/AIInvoiceModal.tsx`: Accessible dialog with Input, Loading, Error, and Preview states, source badge, review warning, and backdrop dismissal safety.
+  - `src/components/AIInvoiceModal.css`: Scoped modal stylesheet adhering to existing design tokens and mobile responsive layouts.
+- **Files Modified**:
+  - `src/components/InvoicePage.tsx`: Added `"✨ Generate with AI"` action button, `isAIModalOpen` state, and `handleApplyAI` callback.
+  - `vite.config.ts`: Added dev serverless middleware plugin for local Netlify function parity during `npm run dev`.
+  - `PROJECT_STATUS.md`: Documented Phase 3 integration, runtime response contract fix, and verification results.
+- **Files Explicitly Protected (0 Diff Confirmed)**:
+  - `src/components/Dashboard.tsx`
+  - `src/components/Document.tsx`
+  - `src/components/DownloadPDF.tsx`
+  - `src/utils/currency.ts`
+  - `src/styles/styles.ts`
+  - `src/styles/compose.ts`
+  - `src/scss/_layout.scss`
+  - `src/scss/_variables.scss`
+- **Verification & Test Results**:
+  - Service contract tests: `npx tsx src/integration/ai-invoice/test/service.test.ts` $\rightarrow$ 13/13 PASS (100%).
+  - Mapper unit tests: `npx tsx src/integration/ai-invoice/test/mapper.test.ts` $\rightarrow$ 26/26 PASS (100%).
+  - Serverless tests: `npx tsx netlify/functions/test/ai-invoice.test.ts` $\rightarrow$ 63/63 PASS (100%).
+  - Extraction engine tests: `npx tsx src/integration/ai-invoice/test/extraction.test.ts` $\rightarrow$ 46/46 PASS (100%).
+  - Typecheck: `npx tsc --noEmit` $\rightarrow$ Exit code 0 (0 errors).
+  - Production build: `npm run build` $\rightarrow$ Exit code 0 (Built in 4.33s, 0 errors).
+  - Regression check: Zero diff on all protected files.
 
 ---
 
 ## Known Limitations
 - In-browser local storage only (zero backend persistence).
 - Dynamic currency exchange rates are intentionally not fetched from third-party APIs; multi-currency totals are displayed cleanly per-currency.
-- AI invoice extraction currently extracts raw numeric values assuming INR context; currency selection will be handled during the future mapping phase.
-- Frontend UI is not yet connected to the serverless endpoint (scheduled for Phase 3).
+- AI invoice extraction currently extracts raw numeric values assuming INR context; currency selection is preserved from the user's invoice canvas.
+- Client email and phone extracted from job descriptions are displayed in the review modal for reference only, as the existing invoice data schema does not include dedicated contact fields.

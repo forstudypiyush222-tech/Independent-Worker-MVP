@@ -14,6 +14,9 @@ import Text from './Text'
 import { Font } from '@react-pdf/renderer'
 import Download from './DownloadPDF'
 import { format } from 'date-fns/format'
+import { AIInvoiceModal } from './AIInvoiceModal'
+import { mapAIExtractionToInvoice } from '../integration/ai-invoice/aiInvoiceMapper'
+import type { AIInvoiceExtraction } from '../integration/ai-invoice/aiInvoiceTypes'
 
 Font.register({
   family: 'Nunito',
@@ -36,6 +39,15 @@ const InvoicePage: FC<Props> = ({ data, pdfMode, onChange }) => {
   const [invoice, setInvoice] = useState<Invoice>(data ? { ...data } : { ...initialInvoice })
   const [subTotal, setSubTotal] = useState<number>()
   const [saleTax, setSaleTax] = useState<number>()
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false)
+
+  const handleApplyAI = (extractedData: AIInvoiceExtraction) => {
+    const updated = mapAIExtractionToInvoice(extractedData, invoice)
+    setInvoice(updated)
+    if (onChange) {
+      onChange(updated)
+    }
+  }
 
   const dateFormat = 'MMM dd, yyyy'
   const invoiceDate = invoice.invoiceDate !== '' ? new Date(invoice.invoiceDate) : new Date()
@@ -143,6 +155,34 @@ const InvoicePage: FC<Props> = ({ data, pdfMode, onChange }) => {
     <Document pdfMode={pdfMode}>
       <Page className="invoice-wrapper" pdfMode={pdfMode}>
         {!pdfMode && <Download data={invoice} setData={(d) => setInvoice(d)} />}
+
+        {!pdfMode && (
+          <div
+            className="ai-invoice-actions flex"
+            style={{ justifyContent: 'flex-end', marginBottom: '16px' }}
+          >
+            <button
+              type="button"
+              className="primary-button"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                borderRadius: '8px',
+                background: '#172033',
+                color: '#ffffff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: 'none',
+              }}
+              onClick={() => setIsAIModalOpen(true)}
+            >
+              <span>✨</span> Generate with AI
+            </button>
+          </div>
+        )}
 
         <View className="flex" pdfMode={pdfMode}>
           <View className="w-50" pdfMode={pdfMode}>
@@ -479,6 +519,15 @@ const InvoicePage: FC<Props> = ({ data, pdfMode, onChange }) => {
             pdfMode={pdfMode}
           />
         </View>
+
+        {!pdfMode && isAIModalOpen && (
+          <AIInvoiceModal
+            isOpen={isAIModalOpen}
+            onClose={() => setIsAIModalOpen(false)}
+            onApply={handleApplyAI}
+            currentCurrency={invoice.currency}
+          />
+        )}
       </Page>
     </Document>
   )
