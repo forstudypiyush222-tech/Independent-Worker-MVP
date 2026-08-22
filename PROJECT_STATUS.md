@@ -238,6 +238,53 @@
   - Production build: `npm run build` $\rightarrow$ Exit code 0 (Built in 4.33s, 0 errors).
   - Regression check: Zero diff on all protected files.
 
+- **Exact Next Phase**: Phase 4 — Production Hardening & Tri-State Tax Semantics [COMPLETED].
+
+---
+
+### 6. Phase 4 — Production Hardening & Tri-State Tax Semantics
+- **Status**: COMPLETED & VERIFIED
+- **Core Problem Resolved**:
+  - Previously, `taxRate: 0` meant both "explicit 0% / no tax" and "tax not mentioned".
+  - When the user provided an invoice with existing 10% tax and asked to generate an invoice with "no tax", the 0% tax was ignored, preserving 10% tax.
+- **Tri-State Tax Semantics Implementation**:
+  - **Explicit Tax Rate** (`taxRate: 18` $\rightarrow$ $>0$): Sets `invoice.taxLabel = "Sale Tax (18%)"`.
+  - **Explicit No Tax / Zero Tax** (`taxRate: 0` $\rightarrow$ $=0$): Overrides and sets `invoice.taxLabel = "Sale Tax (0%)"`.
+  - **Tax Unspecified / Unknown** (`taxRate: null`): Immutably preserves `currentInvoice.taxLabel` (retaining user's active invoice tax).
+- **Extraction Quality Hardening**:
+  - **Double Whitespace Elimination**: Stripping possessive names from descriptions normalized via `.replace(/\s+/g, ' ').trim()`.
+  - **Preview-Only Contact Extraction**: Added deterministic regex extraction for email addresses and phone numbers in heuristic parser, presented in modal preview only with explicit non-persisted tags.
+  - **Tax Regex Robustness**: Captures variants including "no tax", "0% tax", "zero tax", "without tax", "tax free", "tax: 0%", "tax is 0%", "plus 18% GST".
+- **Files Modified**:
+  - `src/integration/ai-invoice/aiInvoiceTypes.ts`: Updated `taxRate` type to `number | null`.
+  - `src/integration/ai-invoice/validation.ts`: Updated Zod schema for nullable tax rate.
+  - `src/integration/ai-invoice/geminiExtractor.ts`: Prompt updated to distinguish explicit percentage vs explicit 0 vs null unspecified.
+  - `src/integration/ai-invoice/heuristicParser.ts`: Tri-state tax detection, contact extraction for preview, description whitespace normalization.
+  - `src/integration/ai-invoice/aiInvoiceMapper.ts`: Tri-state mapping supporting explicit 0% override while preserving on null.
+  - `src/components/AIInvoiceModal.tsx`: Updated preview to display explicit 0% vs non-zero vs unspecified tax.
+  - `src/integration/ai-invoice/test/mapper.test.ts`: Expanded to 30 tests covering all tax scenarios and immutability.
+  - `src/integration/ai-invoice/test/extraction.test.ts`: Expanded to 52 tests covering tri-state tax and quality fixes.
+  - `netlify/functions/test/ai-invoice.test.ts`: Expanded to 64 tests verifying serverless tri-state tax contract.
+  - `PROJECT_STATUS.md`: Documented Phase 4 hardening and verification.
+- **Files Explicitly Protected (0 Diff Confirmed)**:
+  - `src/components/Dashboard.tsx`
+  - `src/components/Document.tsx`
+  - `src/components/DownloadPDF.tsx`
+  - `src/utils/currency.ts`
+  - `src/styles/styles.ts`
+  - `src/styles/compose.ts`
+  - `src/scss/_layout.scss`
+  - `src/scss/_variables.scss`
+- **Verification & Test Results**:
+  - Mapper unit tests: `npx tsx src/integration/ai-invoice/test/mapper.test.ts` $\rightarrow$ 30/30 PASS (100%).
+  - Extraction engine tests: `npx tsx src/integration/ai-invoice/test/extraction.test.ts` $\rightarrow$ 52/52 PASS (100%).
+  - Serverless tests: `npx tsx netlify/functions/test/ai-invoice.test.ts` $\rightarrow$ 64/64 PASS (100%).
+  - Service contract tests: `npx tsx src/integration/ai-invoice/test/service.test.ts` $\rightarrow$ 13/13 PASS (100%).
+  - Total automated assertions: 159/159 PASS (100%).
+  - Typecheck: `npx tsc --noEmit` $\rightarrow$ Exit code 0 (0 errors).
+  - Production build: `npm run build` $\rightarrow$ Exit code 0 (Built in 4.47s, 0 errors).
+  - Regression check: Zero diff on all protected files.
+
 ---
 
 ## Known Limitations
@@ -245,3 +292,4 @@
 - Dynamic currency exchange rates are intentionally not fetched from third-party APIs; multi-currency totals are displayed cleanly per-currency.
 - AI invoice extraction currently extracts raw numeric values assuming INR context; currency selection is preserved from the user's invoice canvas.
 - Client email and phone extracted from job descriptions are displayed in the review modal for reference only, as the existing invoice data schema does not include dedicated contact fields.
+

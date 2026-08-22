@@ -18,7 +18,7 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
     'I', 'We', 'You', 'They', 'Payment', 'Due', 'Total', 'Invoice', 'Please', 'Also', 'And',
     'Repaired', 'Installed', 'Serviced', 'Fixed', 'Built', 'Designed', 'Tailored', 'Taught',
     'Cleaned', 'Painted', 'Created', 'Replaced', 'Purchased', 'Sold', 'Delivered', 'Rendered',
-    'Custom', 'Service', 'General', 'Work'
+    'Custom', 'Service', 'General', 'Work', 'Call'
   ]);
 
   // 1. Extract client name
@@ -46,7 +46,20 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
     }
   }
 
-  // 2. Extract payment due days
+  // 2. Extract preview-only contact information (Email & Phone)
+  let clientEmail = '';
+  const emailMatch = cleanText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/);
+  if (emailMatch) {
+    clientEmail = emailMatch[0].trim();
+  }
+
+  let clientPhone = '';
+  const phoneMatch = cleanText.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
+  if (phoneMatch) {
+    clientPhone = phoneMatch[0].trim();
+  }
+
+  // 3. Extract payment due days
   let dueInDays: number | null = null;
   const dueMatch =
     cleanText.match(/(?:due\s+in|within|in)\s+(\d+)\s*days?/i) ||
@@ -59,20 +72,31 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
     }
   }
 
-  // 3. Extract Tax Percentage
-  let taxRate = 0;
-  const taxMatch =
-    cleanText.match(/(?:plus|\+|\with)?\s*(\d+(?:\.\d+)?)\s*%\s*(?:tax|gst|vat)?/i) ||
-    cleanText.match(/(?:tax|gst|vat)\s*(?:of|@)?\s*(\d+(?:\.\d+)?)\s*%/i);
+  // 4. Extract Tax Percentage (Tri-State: number > 0, 0, or null)
+  let taxRate: number | null = null;
 
-  if (taxMatch) {
-    const parsedTax = parseFloat(taxMatch[1]);
-    if (!isNaN(parsedTax) && parsedTax >= 0) {
-      taxRate = parsedTax;
+  // Check explicit zero tax / no tax patterns first
+  const zeroTaxMatch = cleanText.match(
+    /\b(no\s+tax|0%\s*tax|zero\s+tax|without\s+tax|tax\s+free|tax\s*:\s*0%|tax\s*is\s*0%|plus\s+0%\s*tax|0%\s*gst|gst\s*0%|tax\s*@\s*0%)\b/i
+  );
+
+  if (zeroTaxMatch) {
+    taxRate = 0;
+  } else {
+    // Check explicit non-zero tax percentage patterns
+    const taxMatch =
+      cleanText.match(/(?:plus|\+|\with)?\s*(\d+(?:\.\d+)?)\s*%\s*(?:tax|gst|vat)?/i) ||
+      cleanText.match(/(?:tax|gst|vat)\s*(?:of|@)?\s*(\d+(?:\.\d+)?)\s*%/i);
+
+    if (taxMatch) {
+      const parsedTax = parseFloat(taxMatch[1]);
+      if (!isNaN(parsedTax) && parsedTax >= 0) {
+        taxRate = parsedTax;
+      }
     }
   }
 
-  // 4. Extract Line Items (services, quantities, unit rates)
+  // 5. Extract Line Items (services, quantities, unit rates)
   const items: AIInvoiceItem[] = [];
 
   // Split sentence on conjunctions, commas, periods (avoiding decimals in numbers like 18.5)
@@ -93,8 +117,9 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
 
       if (desc && !isNaN(qty) && qty > 0 && !isNaN(rate) && rate >= 0) {
         if (clientName) {
-          desc = desc.replace(new RegExp(`\\b${clientName}'?s?\\b`, 'gi'), '').trim();
+          desc = desc.replace(new RegExp(`\\b${clientName}'?s?\\b`, 'gi'), '');
         }
+        desc = desc.replace(/\s+/g, ' ').trim();
         items.push({
           description: desc || 'Custom Service',
           quantity: qty,
@@ -114,11 +139,19 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
 
       // Remove client name if inside description
       if (clientName) {
-        desc = desc.replace(new RegExp(`\\b${clientName}'?s?\\b`, 'gi'), '').trim();
+        desc = desc.replace(new RegExp(`\\b${clientName}'?s?\\b`, 'gi'), '');
       }
+      desc = desc.replace(/\s+/g, ' ').trim();
 
       // Ignore phrases like "payment due in 7 days" matching as an item
-      if (desc && !isNaN(rate) && rate >= 0 && !desc.toLowerCase().includes('payment due') && !desc.toLowerCase().includes('due in')) {
+      if (
+        desc &&
+        !isNaN(rate) &&
+        rate >= 0 &&
+        !desc.toLowerCase().includes('payment due') &&
+        !desc.toLowerCase().includes('due in') &&
+        !desc.toLowerCase().includes('tax')
+      ) {
         items.push({
           description: desc,
           quantity: 1,
@@ -136,8 +169,9 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
       const rate = parseFloat(currencyFirstMatch[1]);
       let desc = currencyFirstMatch[2].trim();
       if (clientName) {
-        desc = desc.replace(new RegExp(`\\b${clientName}'?s?\\b`, 'gi'), '').trim();
+        desc = desc.replace(new RegExp(`\\b${clientName}'?s?\\b`, 'gi'), '');
       }
+      desc = desc.replace(/\s+/g, ' ').trim();
       if (desc && !isNaN(rate) && rate >= 0) {
         items.push({
           description: desc,
@@ -152,7 +186,11 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
   if (items.length === 0) {
     const fallbackAmountMatch = cleanText.match(/(?:₹|INR|Rs\.?|\$|€)?\s*(\d+(?:\.\d+)?)/);
     const amount = fallbackAmountMatch ? parseFloat(fallbackAmountMatch[1]) : 0;
-    const fallbackDesc = cleanText.slice(0, 60).trim() || 'Service description';
+    let fallbackDesc = cleanText.slice(0, 60);
+    if (clientName) {
+      fallbackDesc = fallbackDesc.replace(new RegExp(`\\b${clientName}'?s?\\b`, 'gi'), '');
+    }
+    fallbackDesc = fallbackDesc.replace(/\s+/g, ' ').trim() || 'Service description';
     items.push({
       description: fallbackDesc,
       quantity: 1,
@@ -162,8 +200,8 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
 
   const rawCandidate = {
     clientName: clientName || '',
-    clientEmail: '',
-    clientPhone: '',
+    clientEmail,
+    clientPhone,
     items,
     dueInDays,
     notes: cleanText,
@@ -184,7 +222,7 @@ export function heuristicParse(text: string, baseDate: Date = new Date()): AIInv
     items: [{ description: 'Work performed', quantity: 1, rate: 0 }],
     dueInDays: null,
     notes: cleanText,
-    taxRate: 0,
+    taxRate: null,
     suggestedDueDate: null,
   };
 }

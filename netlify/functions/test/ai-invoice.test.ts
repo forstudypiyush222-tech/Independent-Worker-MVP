@@ -51,6 +51,7 @@ async function runServerlessTests() {
   assert(body1.data?.items[0]?.rate === 2500, 'First item rate is 2500');
   assert(body1.data?.dueInDays === 7, 'dueInDays is 7');
   assert(body1.data?.suggestedDueDate === '2026-08-29', 'suggestedDueDate is 2026-08-29');
+  assert(body1.data?.taxRate === null, 'Unspecified tax returns taxRate: null in serverless handler');
 
   // TEST 2 — Valid POST with base64 encoded body
   console.log('\nTEST 2: Valid POST with base64 encoded body');

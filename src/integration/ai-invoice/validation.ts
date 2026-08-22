@@ -64,7 +64,7 @@ export const aiInvoiceExtractionSchema = z.object({
   items: z.array(aiInvoiceItemSchema).min(1, 'At least one item is required'),
   dueInDays: z.number().int().nonnegative().nullable().default(null),
   notes: z.string().trim().default(''),
-  taxRate: z.number().finite().gte(0, 'Tax rate cannot be negative').default(0),
+  taxRate: z.number().finite().gte(0, 'Tax rate cannot be negative').nullable().default(null),
   suggestedDueDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')

@@ -47,9 +47,9 @@ export function mapAIExtractionToInvoice(
     });
   }
 
-  // 3. Tax Label
+  // 3. Tax Label (Tri-State Semantics: null = preserve, 0 = 'Sale Tax (0%)', >0 = 'Sale Tax (X%)')
   let taxLabel = currentInvoice.taxLabel;
-  if (typeof extraction.taxRate === 'number' && Number.isFinite(extraction.taxRate) && extraction.taxRate > 0) {
+  if (typeof extraction.taxRate === 'number' && Number.isFinite(extraction.taxRate) && extraction.taxRate >= 0) {
     taxLabel = `Sale Tax (${extraction.taxRate}%)`;
   }
 

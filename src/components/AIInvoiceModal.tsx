@@ -257,12 +257,16 @@ export const AIInvoiceModal: FC<AIInvoiceModalProps> = ({
                   </div>
                 )}
 
-                {extraction.taxRate > 0 && (
-                  <div className="ai-preview-field">
-                    <span className="ai-preview-label">Sales Tax</span>
-                    <span className="ai-preview-value">{extraction.taxRate}%</span>
-                  </div>
-                )}
+                <div className="ai-preview-field">
+                  <span className="ai-preview-label">Sales Tax</span>
+                  <span className="ai-preview-value">
+                    {extraction.taxRate === 0
+                      ? '0% (No tax)'
+                      : typeof extraction.taxRate === 'number' && extraction.taxRate > 0
+                      ? `${extraction.taxRate}%`
+                      : 'Not specified (preserves current)'}
+                  </span>
+                </div>
               </div>
 
               {/* LINE ITEMS TABLE */}

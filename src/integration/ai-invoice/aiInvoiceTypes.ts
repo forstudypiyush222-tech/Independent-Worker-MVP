@@ -20,7 +20,7 @@ export interface AIInvoiceExtraction {
   items: AIInvoiceItem[];
   dueInDays: number | null;
   notes: string;
-  taxRate: number;
+  taxRate: number | null;
   suggestedDueDate: string | null;
 }
 

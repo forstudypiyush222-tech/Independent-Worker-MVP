@@ -36,7 +36,7 @@ Return a JSON object matching this exact structure:
   ],
   "dueInDays": null,
   "notes": "any additional notes or payment instructions",
-  "taxRate": 0
+  "taxRate": null
 }
 
 Rules:
@@ -44,7 +44,8 @@ Rules:
 - Default quantity to 1 when not specified.
 - Extract raw numeric rates (numbers only).
 - Do not calculate subtotal, tax amount, or total amount.
-- Extract tax percentage only when explicitly mentioned (e.g. "18% tax" -> taxRate: 18).
+- Extract tax percentage when explicitly mentioned (e.g. "18% tax" -> taxRate: 18, "0% tax" or "no tax" or "without tax" -> taxRate: 0).
+- If tax is not mentioned or unknown, set taxRate to null.
 - Extract payment terms / due days if mentioned (e.g. "due in 7 days" -> dueInDays: 7).
 - Do not invent missing information; use empty strings or null.
 - Return ONLY valid JSON, without markdown formatting or commentary.`;
