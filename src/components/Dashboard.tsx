@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import './Dashboard.css'
 import { Invoice } from '../data/types'
+import {
+  formatCurrency,
+  aggregateAmountsByCurrency,
+  formatCurrencyTotals,
+} from '../utils/currency'
 
 type InvoiceRecord = {
     id: string
@@ -68,43 +73,63 @@ useEffect(() => {
   }
 }, [])
 
-    const totalRevenue = invoiceRecords.reduce((sum, record) => {
-        return sum + record.amount
-    }, 0)
+    const totalRevenueByCurrency = aggregateAmountsByCurrency(invoiceRecords)
+    const paidAmountByCurrency = aggregateAmountsByCurrency(
+        invoiceRecords.filter((record) => record.status === 'paid')
+    )
+    const pendingAmountByCurrency = aggregateAmountsByCurrency(
+        invoiceRecords.filter((record) => record.status === 'pending')
+    )
+    const overdueAmountByCurrency = aggregateAmountsByCurrency(
+        invoiceRecords.filter((record) => record.status === 'overdue')
+    )
 
-    const paidAmount = invoiceRecords
-        .filter((record) => record.status === 'paid')
-        .reduce((sum, record) => {
-            return sum + record.amount
-        }, 0)
-
-    const pendingAmount = invoiceRecords
-        .filter((record) => record.status === 'pending')
-        .reduce((sum, record) => {
-            return sum + record.amount
-        }, 0)
-
-    const overdueAmount = invoiceRecords
-        .filter((record) => record.status === 'overdue')
-        .reduce((sum, record) => {
-            return sum + record.amount
-        }, 0)
     const paidCount = invoiceRecords.filter(
-  (record) => record.status === 'paid'
-).length
+        (record) => record.status === 'paid'
+    ).length
 
-const pendingCount = invoiceRecords.filter(
-  (record) => record.status === 'pending'
-).length
+    const pendingCount = invoiceRecords.filter(
+        (record) => record.status === 'pending'
+    ).length
 
-const overdueCount = invoiceRecords.filter(
-  (record) => record.status === 'overdue'
-).length
+    const overdueCount = invoiceRecords.filter(
+        (record) => record.status === 'overdue'
+    ).length
 
-const collectionRate =
-  totalRevenue > 0
-    ? Math.round((paidAmount / totalRevenue) * 100)
-    : 0
+    const totalRevenueKeys = Object.keys(totalRevenueByCurrency)
+    const collectionRate = (() => {
+        if (totalRevenueKeys.length === 1) {
+            const currency = totalRevenueKeys[0]
+            const total = totalRevenueByCurrency[currency] || 0
+            const paid = paidAmountByCurrency[currency] || 0
+            return total > 0 ? Math.round((paid / total) * 100) : 0
+        }
+        return invoiceRecords.length > 0
+            ? Math.round((paidCount / invoiceRecords.length) * 100)
+            : 0
+    })()
+
+    const getReminderMessage = (record: InvoiceRecord) => {
+        const formattedAmount = formatCurrency(
+            record.amount,
+            record.invoice?.currency
+        )
+        return `Hi ${
+            record.invoice.clientName || 'there'
+        },
+
+Just a friendly reminder that invoice ${
+            record.invoice.invoiceTitle || record.id
+        } for ${formattedAmount} is currently overdue.
+
+The payment was due on ${
+            record.invoice.invoiceDueDate || 'the due date'
+        }.
+
+Please let me know if you have any questions.
+
+Thank you.`
+    }
 const filteredPaymentRecords =
   paymentFilter === 'all'
     ? invoiceRecords
@@ -153,9 +178,9 @@ const filteredPaymentRecords =
                 <div className="stat-card">
                     <div className="stat-top">
                         <span>Total Revenue</span>
-                        <span className="stat-icon">₹</span>
+                        <span className="stat-icon">◈</span>
                     </div>
-                    <h2>₹{totalRevenue.toFixed(2)}</h2>
+                    <h2>{formatCurrencyTotals(totalRevenueByCurrency)}</h2>
                     <p className="positive">Total invoiced</p>
                 </div>
 
@@ -164,7 +189,7 @@ const filteredPaymentRecords =
                         <span>Paid</span>
                         <span className="stat-icon">✓</span>
                     </div>
-                    <h2>₹{paidAmount.toFixed(2)}</h2>
+                    <h2>{formatCurrencyTotals(paidAmountByCurrency)}</h2>
                     <p className="positive">
   {collectionRate}% collected · {paidCount} paid
 </p>
@@ -175,7 +200,7 @@ const filteredPaymentRecords =
                         <span>Pending</span>
                         <span className="stat-icon">◷</span>
                     </div>
-                    <h2>₹{pendingAmount.toFixed(2)}</h2>
+                    <h2>{formatCurrencyTotals(pendingAmountByCurrency)}</h2>
                     <p className="neutral">
   {pendingCount} invoice{pendingCount !== 1 ? 's' : ''} pending
 </p>
@@ -186,7 +211,7 @@ const filteredPaymentRecords =
                         <span>Overdue</span>
                         <span className="stat-icon">!</span>
                     </div>
-                    <h2>₹{overdueAmount.toFixed(2)}</h2>
+                    <h2>{formatCurrencyTotals(overdueAmountByCurrency)}</h2>
                     <p className="negative">
   {overdueCount} payment{overdueCount !== 1 ? 's' : ''} overdue
 </p>
@@ -242,8 +267,7 @@ const filteredPaymentRecords =
                                         </div>
 
                                         <strong>
-                                            {record.invoice.currency || '₹'}
-                                            {record.amount.toFixed(2)}
+                                            {formatCurrency(record.amount, record.invoice?.currency)}
                                         </strong>
 
                                         <button
@@ -299,22 +323,22 @@ const filteredPaymentRecords =
 
     <div>
       <span>Total Invoiced</span>
-      <strong>₹{totalRevenue.toFixed(2)}</strong>
+      <strong>{formatCurrencyTotals(totalRevenueByCurrency)}</strong>
     </div>
 
     <div>
       <span>Collected</span>
-      <strong>₹{paidAmount.toFixed(2)}</strong>
+      <strong>{formatCurrencyTotals(paidAmountByCurrency)}</strong>
     </div>
 
     <div>
       <span>Pending</span>
-      <strong>₹{pendingAmount.toFixed(2)}</strong>
+      <strong>{formatCurrencyTotals(pendingAmountByCurrency)}</strong>
     </div>
 
     <div>
       <span>Overdue</span>
-      <strong>₹{overdueAmount.toFixed(2)}</strong>
+      <strong>{formatCurrencyTotals(overdueAmountByCurrency)}</strong>
     </div>
 
   </div>
@@ -398,7 +422,7 @@ const filteredPaymentRecords =
               </div>
 
               <strong className="payment-amount">
-                ₹{record.amount.toFixed(2)}
+                {formatCurrency(record.amount, record.invoice?.currency)}
               </strong>
 
               <span
@@ -466,7 +490,7 @@ const filteredPaymentRecords =
                             </button>
 
                             <button className="action-card">
-                                <span className="action-icon">₹</span>
+                                <span className="action-icon">◈</span>
                                 <span>
                                     <strong>Record Payment</strong>
                                     <small>Mark an invoice as paid</small>
@@ -503,8 +527,8 @@ const filteredPaymentRecords =
     <p className="dashboard-eyebrow">NEEDS ATTENTION</p>
 
     <h3>
-      {overdueAmount > 0
-        ? `₹${overdueAmount.toFixed(2)} is waiting for you.`
+      {overdueCount > 0
+        ? `${formatCurrencyTotals(overdueAmountByCurrency)} is waiting for you.`
         : 'You are all caught up.'}
     </h3>
 
@@ -540,8 +564,7 @@ const filteredPaymentRecords =
 
           <p>
             {overdueCount} overdue invoice
-            {overdueCount !== 1 ? 's' : ''} · ₹
-            {overdueAmount.toFixed(2)} outstanding
+            {overdueCount !== 1 ? 's' : ''} · {formatCurrencyTotals(overdueAmountByCurrency)} outstanding
           </p>
         </div>
 
@@ -602,8 +625,7 @@ const daysOverdue = Math.max(
 
               <div className="chase-amount">
                 <strong>
-                  {record.invoice.currency || '₹'}
-                  {record.amount.toFixed(2)}
+                  {formatCurrency(record.amount, record.invoice?.currency)}
                 </strong>
 
                 <button
@@ -634,53 +656,14 @@ const daysOverdue = Math.max(
           </h3>
 
           <textarea
-            value={`Hi ${
-              selectedInvoice.invoice.clientName ||
-              'there'
-            },
-
-Just a friendly reminder that invoice ${
-              selectedInvoice.invoice.invoiceTitle ||
-              selectedInvoice.id
-            } for ${
-              selectedInvoice.invoice.currency || '₹'
-            }${selectedInvoice.amount.toFixed(2)} is currently overdue.
-
-The payment was due on ${
-              selectedInvoice.invoice.invoiceDueDate ||
-              'the due date'
-            }.
-
-Please let me know if you have any questions.
-
-Thank you.`}
+            value={getReminderMessage(selectedInvoice)}
             readOnly
           />
 
           <button
             className="secondary-button"
             onClick={() => {
-              const message = `Hi ${
-                selectedInvoice.invoice.clientName ||
-                'there'
-              },
-
-Just a friendly reminder that invoice ${
-                selectedInvoice.invoice.invoiceTitle ||
-                selectedInvoice.id
-              } for ${
-                selectedInvoice.invoice.currency || '₹'
-              }${selectedInvoice.amount.toFixed(2)} is currently overdue.
-
-The payment was due on ${
-                selectedInvoice.invoice.invoiceDueDate ||
-                'the due date'
-              }.
-
-Please let me know if you have any questions.
-
-Thank you.`
-
+              const message = getReminderMessage(selectedInvoice)
               navigator.clipboard.writeText(message)
               alert('Reminder copied!')
             }}
@@ -718,10 +701,10 @@ Thank you.`
         <div className="stat-card">
           <div className="stat-top">
             <span>Total Invoiced</span>
-            <span className="stat-icon">₹</span>
+            <span className="stat-icon">◈</span>
           </div>
 
-          <h2>₹{totalRevenue.toFixed(2)}</h2>
+          <h2>{formatCurrencyTotals(totalRevenueByCurrency)}</h2>
         </div>
 
         <div className="stat-card">
@@ -730,7 +713,7 @@ Thank you.`
             <span className="stat-icon">✓</span>
           </div>
 
-          <h2>₹{paidAmount.toFixed(2)}</h2>
+          <h2>{formatCurrencyTotals(paidAmountByCurrency)}</h2>
         </div>
 
         <div className="stat-card">
@@ -739,7 +722,7 @@ Thank you.`
             <span className="stat-icon">◷</span>
           </div>
 
-          <h2>₹{pendingAmount.toFixed(2)}</h2>
+          <h2>{formatCurrencyTotals(pendingAmountByCurrency)}</h2>
         </div>
 
         <div className="stat-card">

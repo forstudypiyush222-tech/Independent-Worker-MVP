@@ -1,4 +1,5 @@
 import { ProductLine, Invoice } from './types'
+import { DEFAULT_CURRENCY } from '../utils/currency'
 
 export const initialProductLine: ProductLine = {
   description: '',
@@ -42,7 +43,7 @@ export const initialInvoice: Invoice = {
   subTotalLabel: 'Sub Total',
   taxLabel: 'Sale Tax (10%)',
   totalLabel: 'TOTAL',
-  currency: '$',
+  currency: DEFAULT_CURRENCY,
   notesLabel: 'Notes',
   notes: 'It was great doing business with you.',
   termLabel: 'Terms & Conditions',
