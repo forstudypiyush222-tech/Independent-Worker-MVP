@@ -285,6 +285,33 @@
   - Production build: `npm run build` $\rightarrow$ Exit code 0 (Built in 4.47s, 0 errors).
   - Regression check: Zero diff on all protected files.
 
+- **Exact Next Phase**: Phase 5 — Final QA, Regression & Production Readiness Sign-Off [COMPLETED & SIGNED OFF].
+
+---
+
+### 7. Phase 5 — Final QA, Regression & Production Readiness Sign-Off
+- **Status**: PRODUCTION READY & SIGNED OFF
+- **Scope**: Comprehensive read-only end-to-end audit and regression verification across all 4 implementation phases.
+- **Audit Verification Results**:
+  - **State Ownership & Integrity**: AI generation operates as an additive input layer terminating strictly at `InvoicePage` and `App.tsx`. Zero secondary states, parallel stores, or unapproved persistence mechanisms exist.
+  - **Tri-State Tax Verification**:
+    - Explicit positive tax (e.g. 18%) $\rightarrow$ sets `"Sale Tax (18%)"`.
+    - Explicit zero tax (e.g. 0%, no tax, tax free) $\rightarrow$ sets `"Sale Tax (0%)"` (overriding existing).
+    - Unspecified tax (null) $\rightarrow$ preserves existing active `taxLabel`.
+  - **Preview $\rightarrow$ Apply Consistency**: Extracted client name, product lines, quantities, rates, tax, due date, and notes match 1:1 between modal preview and canvas editor. Email and phone remain preview-only and are strictly omitted from persisted invoice notes.
+  - **Financial Calculation Integrity**: `InvoicePage.tsx` effects retain 100% authoritative ownership of subtotal, tax balance, and total calculations.
+  - **Security & Privacy**: `GEMINI_API_KEY` is isolated to the serverless function (`process.env`). Client uses native `fetch` against `/.netlify/functions/ai-invoice` with 10s `AbortController` timeout and bounds enforcement. All rendered content uses safe JSX text nodes.
+  - **Local/Production Parity**: Verified identical runtime contracts between local Vite dev server middleware and Netlify serverless deployment.
+- **Test & Build Verification**:
+  - Mapper unit tests: `npx tsx src/integration/ai-invoice/test/mapper.test.ts` $\rightarrow$ 30/30 PASS (100%).
+  - Extraction engine tests: `npx tsx src/integration/ai-invoice/test/extraction.test.ts` $\rightarrow$ 52/52 PASS (100%).
+  - Serverless tests: `npx tsx netlify/functions/test/ai-invoice.test.ts` $\rightarrow$ 64/64 PASS (100%).
+  - Service contract tests: `npx tsx src/integration/ai-invoice/test/service.test.ts` $\rightarrow$ 13/13 PASS (100%).
+  - Total automated assertions: **159/159 PASS (100%)**.
+  - TypeScript compilation: `npx tsc --noEmit` $\rightarrow$ **0 errors**.
+  - Production build: `npm run build` $\rightarrow$ **Built in 4.43s, 0 errors**.
+  - Protected files regression: **Zero diff across all protected files**.
+
 ---
 
 ## Known Limitations
@@ -292,4 +319,5 @@
 - Dynamic currency exchange rates are intentionally not fetched from third-party APIs; multi-currency totals are displayed cleanly per-currency.
 - AI invoice extraction currently extracts raw numeric values assuming INR context; currency selection is preserved from the user's invoice canvas.
 - Client email and phone extracted from job descriptions are displayed in the review modal for reference only, as the existing invoice data schema does not include dedicated contact fields.
+
 
