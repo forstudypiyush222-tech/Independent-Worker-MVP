@@ -59,9 +59,131 @@
   right: -20px;
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
+  cursor: pointer;
 
   .row:hover &,
   .row:focus-within & {
     opacity: 1;
+  }
+}
+
+/* =========================================
+   INVOICE EDITOR RESPONSIVE LAYOUT
+   ========================================= */
+
+/* Tablet & Mobile (< 1024px) */
+@media (max-width: 1023px) {
+  .invoice-wrapper {
+    .row__remove {
+      opacity: 1;
+      right: 0;
+    }
+  }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .invoice-wrapper {
+    .flex {
+      flex-wrap: wrap;
+    }
+
+    > .flex > .w-50,
+    .mt-40 > .w-55,
+    .mt-40 > .w-45 {
+      width: 100% !important;
+    }
+
+    .fs-45 {
+      font-size: 32px !important;
+      text-align: left !important;
+      margin: 12px 0 8px 0;
+    }
+
+    .mt-40 {
+      margin-top: 20px;
+    }
+
+    .mt-30 {
+      margin-top: 16px;
+    }
+
+    .mt-20 {
+      margin-top: 16px;
+    }
+
+    /* Subtotal and Totals Section */
+    .w-50.mt-20 {
+      width: 100% !important;
+    }
+
+    .w-50.mt-10 {
+      width: 100% !important;
+    }
+  }
+}
+
+/* Small Mobile (< 640px) */
+@media (max-width: 639px) {
+  .invoice-wrapper {
+    .mt-30.bg-dark.flex {
+      display: none !important;
+    }
+
+    .row.flex {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 12px 10px;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #e2e8f0;
+      box-sizing: border-box;
+
+      .w-48 {
+        width: 100% !important;
+        padding: 0 0 8px 0 !important;
+      }
+
+      .w-17 {
+        width: 32% !important;
+        padding: 0 4px !important;
+        box-sizing: border-box;
+
+        .input {
+          text-align: left !important;
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 6px 8px;
+          box-sizing: border-box;
+        }
+      }
+
+      .w-18 {
+        width: 36% !important;
+        padding: 0 4px !important;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        box-sizing: border-box;
+
+        .span {
+          padding: 6px 0;
+          font-weight: 700;
+        }
+      }
+
+      .row__remove {
+        position: static !important;
+        opacity: 1 !important;
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 8px;
+        border-top: 1px dashed #e2e8f0;
+        margin-top: 8px;
+      }
+    }
   }
 }

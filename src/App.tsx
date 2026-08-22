@@ -109,7 +109,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app ${view === 'dashboard' ? 'app--dashboard' : 'app--invoice'}`}>
       {view === 'dashboard' ? (
         <Dashboard
           onCreateInvoice={handleCreateInvoice}
@@ -117,12 +117,8 @@ function App() {
       ) : (
         <div>
           <button
+            className="back-button"
             onClick={handleBackToDashboard}
-            style={{
-              margin: '20px',
-              padding: '10px 18px',
-              cursor: 'pointer',
-            }}
           >
             ← Back to Dashboard
           </button>

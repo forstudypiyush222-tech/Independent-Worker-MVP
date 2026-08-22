@@ -1,6 +1,38 @@
 .app {
-  margin: 30px auto 50px auto;
-  width: 700px;
+  width: 100%;
+  box-sizing: border-box;
+
+  &--dashboard {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  &--invoice {
+    max-width: 800px;
+    margin: 20px auto 50px auto;
+    padding: 0 16px;
+  }
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  margin: 16px 0 20px 0;
+  padding: 10px 18px;
+  border: 1px solid #d7dde7;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172033;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
 }
 
 .input,
@@ -40,6 +72,7 @@
   background: #fff;
   padding: 40px 35px;
   box-shadow: 0 0 17px 0 rgba(16, 40, 73, 0.09);
+  box-sizing: border-box;
 }
 
 .download-pdf {
@@ -83,6 +116,85 @@
   }
   input[type='file'] {
     visibility: hidden;
+  }
+}
+
+@media (max-width: 1023px) {
+  .invoice-wrapper {
+    padding: 30px 24px;
+  }
+
+  .download-pdf {
+    position: static;
+    top: auto;
+    margin-left: 0;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #ffffff;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    box-sizing: border-box;
+
+    .mt-40 {
+      margin-top: 0 !important;
+    }
+
+    a,
+    label,
+    button {
+      display: inline-block;
+      vertical-align: middle;
+      position: static;
+      width: auto;
+      height: auto;
+      cursor: pointer;
+    }
+
+    .download-pdf__pdf {
+      width: 32px;
+      height: 32px;
+      background: url('../images/download.svg') no-repeat center center;
+      background-size: contain;
+    }
+
+    .download-pdf__template_download {
+      width: 28px;
+      height: 28px;
+      background: url('../images/template_download.svg') no-repeat center center;
+      background-size: contain;
+    }
+
+    .download-pdf__template_upload {
+      width: 28px;
+      height: 28px;
+      background: url('../images/template_upload.svg') no-repeat center center;
+      background-size: contain;
+    }
+
+    p {
+      margin: 0 14px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .invoice-wrapper {
+    padding: 20px 14px;
+    border-radius: 8px;
   }
 }
 
@@ -191,8 +303,11 @@
   padding: 10px 20px 25px;
   position: absolute;
   width: 270px;
+  max-width: min(270px, 85vw);
   top: -70px;
   left: 0;
   border-radius: 4px;
   box-shadow: 2px 1px 6px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  z-index: 10;
 }
