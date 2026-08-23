@@ -52,7 +52,7 @@ Rules:
 }
 
 /**
- * Orchestrates AI extraction from natural language text using Google Gemini 1.5 Flash
+ * Orchestrates AI extraction from natural language text using Google Gemini 2.5 Flash
  * with automatic, resilient failover to the deterministic heuristic parser.
  */
 export async function extractInvoiceData(
@@ -96,7 +96,7 @@ export async function extractInvoiceData(
   // 3. Attempt Gemini extraction
   const fetchFn = options?.fetchFn || fetch;
   const timeoutMs = options?.timeoutMs || 8000;
-  const modelName = options?.modelName || 'gemini-1.5-flash';
+  const modelName = options?.modelName || 'gemini-2.5-flash';
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

@@ -6,6 +6,7 @@ import {
   GeminiExtractorOptions,
 } from '../../src/integration/ai-invoice/geminiExtractor';
 import { validateAIInvoiceInput } from '../../src/integration/ai-invoice/validation';
+import { heuristicParse } from '../../src/integration/ai-invoice/heuristicParser';
 
 export interface HandlerEvent {
   rawUrl?: string;
@@ -230,13 +231,27 @@ export const handler: Handler = async (
   } catch (err: unknown) {
     // Log error internally; never leak internal details or stack traces to client
     console.error('Unhandled AI invoice serverless function error:', err);
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        success: false,
-        error: 'An unexpected internal error occurred during invoice extraction.',
-      }),
-    };
+    try {
+      const fallbackData = heuristicParse(inputValidation.sanitizedText, new Date());
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          success: true,
+          data: fallbackData,
+          source: 'heuristic',
+          warning: 'Extraction service recovered with offline heuristic fallback.',
+        }),
+      };
+    } catch {
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          success: false,
+          error: 'An unexpected internal error occurred during invoice extraction.',
+        }),
+      };
+    }
   }
 };
