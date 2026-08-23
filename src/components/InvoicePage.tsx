@@ -253,6 +253,12 @@ const InvoicePage: FC<Props> = ({ data, pdfMode, onChange }) => {
               pdfMode={pdfMode}
             />
             <EditableInput
+              placeholder="Enter client phone number"
+              value={invoice.clientPhone || ''}
+              onChange={(value) => handleChange('clientPhone', value)}
+              pdfMode={pdfMode}
+            />
+            <EditableInput
               placeholder="Client's Address"
               value={invoice.clientAddress}
               onChange={(value) => handleChange('clientAddress', value)}

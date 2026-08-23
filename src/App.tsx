@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Dashboard from './components/Dashboard'
 import InvoicePage from './components/InvoicePage'
+import NotificationCenter from './components/NotificationCenter'
 import { Invoice } from './data/types'
 import { initialInvoice } from './data/initialData'
 
@@ -25,7 +26,7 @@ function calculateInvoiceAmount(invoice: Invoice) {
 }
 
 function App() {
-  const [view, setView] = useState<'dashboard' | 'invoice'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'invoice' | 'notifications'>('dashboard')
 
   const [invoiceData, setInvoiceData] = useState<Invoice>(() => {
     const savedInvoice = window.localStorage.getItem('invoiceData')
@@ -45,16 +46,16 @@ function App() {
     () => crypto.randomUUID()
   )
 
- const handleCreateInvoice = () => {
-  setCurrentInvoiceId(crypto.randomUUID())
-  setInvoiceData({
-    ...initialInvoice,
-    productLines: initialInvoice.productLines.map((line) => ({
-      ...line,
-    })),
-  })
-  setView('invoice')
-}
+  const handleCreateInvoice = () => {
+    setCurrentInvoiceId(crypto.randomUUID())
+    setInvoiceData({
+      ...initialInvoice,
+      productLines: initialInvoice.productLines.map((line) => ({
+        ...line,
+      })),
+    })
+    setView('invoice')
+  }
 
   const handleInvoiceUpdated = (invoice: Invoice) => {
     setInvoiceData(invoice)
@@ -109,26 +110,68 @@ function App() {
   }
 
   return (
-    <div className={`app ${view === 'dashboard' ? 'app--dashboard' : 'app--invoice'}`}>
-      {view === 'dashboard' ? (
-        <Dashboard
-          onCreateInvoice={handleCreateInvoice}
-        />
-      ) : (
-        <div>
+    <div>
+      {/* Top Application Navigation Bar */}
+      <nav className="app-nav-bar">
+        <div className="app-nav-brand">
+          <div className="app-nav-brand-logo">⚡</div>
+          <span className="app-nav-brand-text">Independent Worker Hub</span>
+        </div>
+
+        <div className="app-nav-tabs">
           <button
-            className="back-button"
-            onClick={handleBackToDashboard}
+            className={`app-nav-tab ${view === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setView('dashboard')}
           >
-            ← Back to Dashboard
+            <span>📊</span>
+            <span>Dashboard</span>
           </button>
 
-          <InvoicePage
-            data={invoiceData}
-            onChange={handleInvoiceUpdated}
-          />
+          <button
+            className={`app-nav-tab ${view === 'notifications' ? 'active' : ''}`}
+            onClick={() => setView('notifications')}
+          >
+            <span>🔔</span>
+            <span>Payment Reminders</span>
+          </button>
+
+          <button
+            className={`app-nav-tab ${view === 'invoice' ? 'active' : ''}`}
+            onClick={() => setView('invoice')}
+          >
+            <span>📄</span>
+            <span>Invoice Editor</span>
+          </button>
         </div>
-      )}
+      </nav>
+
+      {/* Main View Area */}
+      <div className={`app ${view === 'dashboard' ? 'app--dashboard' : view === 'notifications' ? 'app--notifications' : 'app--invoice'}`}>
+        {view === 'dashboard' ? (
+          <Dashboard
+            onCreateInvoice={handleCreateInvoice}
+            onOpenNotifications={() => setView('notifications')}
+          />
+        ) : view === 'notifications' ? (
+          <NotificationCenter
+            onBackToDashboard={handleBackToDashboard}
+          />
+        ) : (
+          <div>
+            <button
+              className="back-button"
+              onClick={handleBackToDashboard}
+            >
+              ← Back to Dashboard
+            </button>
+
+            <InvoicePage
+              data={invoiceData}
+              onChange={handleInvoiceUpdated}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

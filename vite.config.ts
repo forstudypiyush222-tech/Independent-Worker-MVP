@@ -12,7 +12,12 @@ function netlifyFunctionsDevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
         const url = req.url ? req.url.split('?')[0] : ''
-        if (url === '/.netlify/functions/ai-invoice') {
+        // Route to AI invoice function
+        const isAiInvoice = url === '/.netlify/functions/ai-invoice'
+        // Route to Notify function
+        const isNotify = url === '/api/notify' || url === '/.netlify/functions/notify'
+
+        if (isAiInvoice || isNotify) {
           if (req.method === 'OPTIONS') {
             res.statusCode = 204
             res.setHeader('Access-Control-Allow-Origin', '*')
@@ -30,14 +35,17 @@ function netlifyFunctionsDevPlugin(): Plugin {
 
             req.on('end', async () => {
               try {
-                const { handler } = await server.ssrLoadModule('/netlify/functions/ai-invoice.ts')
+                const targetModule = isAiInvoice
+                  ? '/netlify/functions/ai-invoice.ts'
+                  : '/netlify/functions/notify.ts'
+                const { handler } = await server.ssrLoadModule(targetModule)
                 const headersRecord: Record<string, string | undefined> = {}
                 for (const [key, value] of Object.entries(req.headers)) {
                   headersRecord[key] = Array.isArray(value) ? value.join(', ') : value
                 }
 
                 const event = {
-                  path: req.url || '/.netlify/functions/ai-invoice',
+                  path: req.url || (isAiInvoice ? '/.netlify/functions/ai-invoice' : '/api/notify'),
                   httpMethod: 'POST',
                   headers: headersRecord,
                   body: rawBody,

@@ -18,6 +18,7 @@ export const initialInvoice: Invoice = {
   companyCountry: 'United States',
   billTo: 'Bill To:',
   clientName: '',
+  clientPhone: '',
   clientAddress: '',
   clientAddress2: '',
   clientCountry: 'United States',

@@ -16,9 +16,10 @@ type InvoiceRecord = {
 
 type DashboardProps = {
     onCreateInvoice: () => void
+    onOpenNotifications?: () => void
 }
 
-function Dashboard({ onCreateInvoice }: DashboardProps) {
+function Dashboard({ onCreateInvoice, onOpenNotifications }: DashboardProps) {
     const [invoiceRecords, setInvoiceRecords] = useState<InvoiceRecord[]>([])
 
     const [showChasePanel, setShowChasePanel] = useState(false)
@@ -517,6 +518,18 @@ const filteredPaymentRecords =
                                     <small>Track your earnings</small>
                                 </span>
                             </button>
+
+                            {onOpenNotifications && (
+                                <button className="action-card"
+                                  onClick={onOpenNotifications}
+                                >
+                                    <span className="action-icon">🔔</span>
+                                    <span>
+                                        <strong>Payment Reminders</strong>
+                                        <small>Send WhatsApp & SMS reminders</small>
+                                    </span>
+                                </button>
+                            )}
                         </div>
                     </div>
             </section>
